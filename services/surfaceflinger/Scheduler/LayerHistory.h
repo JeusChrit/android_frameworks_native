@@ -43,6 +43,7 @@ struct LayerProps;
 class LayerHistory {
 public:
     using LayerVoteType = RefreshRateSelector::LayerVoteType;
+    static constexpr std::chrono::nanoseconds kMaxPeriodForHistory = 1s;
 
     LayerHistory();
     ~LayerHistory();
@@ -89,7 +90,12 @@ public:
 
     /* QTI_BEGIN */
     void qtiUpdateThermalFps(float fps) { mQtiThermalFps = fps; }
+    void qtiUpdateSmoMoRefreshRateVote(std::map<int, int>& refresh_rate_votes) {
+      refresh_rate_votes_ = refresh_rate_votes;
+    }
     /* QTI_END */
+
+    bool isSmallDirtyArea(uint32_t dirtyArea, float threshold) const;
 
 private:
     friend class LayerHistoryTest;
@@ -146,6 +152,7 @@ private:
     /* QTI_BEGIN */
     // If Thermal mitigation enabled, limit to thermal Fps
     float mQtiThermalFps = 0.0f;
+    std::map<int, int> refresh_rate_votes_;
     /* QTI_END */
 };
 

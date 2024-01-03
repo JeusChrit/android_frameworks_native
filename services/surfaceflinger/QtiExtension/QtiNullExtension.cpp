@@ -55,6 +55,8 @@ bool QtiNullExtension::qtiLatchMediaContent(sp<Layer> layer) {
 }
 void QtiNullExtension::qtiUpdateBufferData(bool qtiLatchMediaContent, const layer_state_t& s) {}
 
+void QtiNullExtension::qtiOnComposerHalRefresh() {}
+
 /*
  * Methods that call the FeatureManager APIs.
  */
@@ -84,7 +86,7 @@ void QtiNullExtension::qtiUpdateVsyncConfiguration() {}
 /*
  * Methods that call FrameScheduler APIs.
  */
-void QtiNullExtension::qtiUpdateFrameScheduler() {}
+//void QtiNullExtension::qtiUpdateFrameScheduler() {}
 
 /*
  * Methods that call the IDisplayConfig APIs.
@@ -145,7 +147,7 @@ void QtiNullExtension::qtiCreateSmomoInstance(const DisplayDeviceState& state) {
 void QtiNullExtension::qtiDestroySmomoInstance(const sp<DisplayDevice>& display) {}
 void QtiNullExtension::qtiSetRefreshRates(PhysicalDisplayId displayId) {}
 void QtiNullExtension::qtiSetRefreshRateTo(int32_t refreshRate) {}
-void QtiNullExtension::qtiSyncToDisplayHardware() {}
+//void QtiNullExtension::qtiSyncToDisplayHardware() {}
 void QtiNullExtension::qtiUpdateSmomoState() {}
 void QtiNullExtension::qtiSetDisplayAnimating() {}
 void QtiNullExtension::qtiUpdateSmomoLayerInfo(
@@ -168,6 +170,9 @@ uint32_t QtiNullExtension::qtiGetLayerClass(std::string mName) {
 }
 void QtiNullExtension::qtiSetVisibleLayerInfo(DisplayId displayId,
                                                   const char* name, int32_t sequence) {}
+bool QtiNullExtension::qtiIsSmomoOptimalRefreshActive() {
+    return false;
+}
 
 /*
  * Methods for speculative fence

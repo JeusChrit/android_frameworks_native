@@ -69,6 +69,7 @@ public:
     virtual composer::DisplayExtnIntf* qtiGetDisplayExtn() = 0;
     virtual bool qtiLatchMediaContent(sp<Layer> layer) = 0;
     virtual void qtiUpdateBufferData(bool qtiLatchMediaContent, const layer_state_t& s) = 0;
+    virtual void qtiOnComposerHalRefresh() = 0;
 
     /*
      * Methods that call the FeatureManager APIs.
@@ -95,7 +96,7 @@ public:
     /*
      * Methods that call FrameScheduler APIs.
      */
-    virtual void qtiUpdateFrameScheduler() = 0;
+    //virtual void qtiUpdateFrameScheduler() = 0;
 
     /*
      * Methods that call the IDisplayConfig APIs.
@@ -131,7 +132,7 @@ public:
     virtual void qtiDestroySmomoInstance(const sp<DisplayDevice>& display) = 0;
     virtual void qtiSetRefreshRates(PhysicalDisplayId displayId) = 0;
     virtual void qtiSetRefreshRateTo(int32_t refreshRate) = 0;
-    virtual void qtiSyncToDisplayHardware() = 0;
+    //virtual void qtiSyncToDisplayHardware() = 0;
     virtual void qtiUpdateSmomoState() = 0;
     virtual void qtiSetDisplayAnimating() = 0;
     virtual void qtiUpdateSmomoLayerInfo(sp<Layer> layer, int64_t desiredPresentTime,
@@ -150,6 +151,7 @@ public:
     virtual uint32_t qtiGetLayerClass(std::string mName) = 0;
     virtual void qtiSetVisibleLayerInfo(DisplayId displayId,
                                  const char* name, int32_t sequence) = 0;
+    virtual bool qtiIsSmomoOptimalRefreshActive() = 0;
 
     /*
      * Methods for Dolphin APIs

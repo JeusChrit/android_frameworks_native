@@ -45,7 +45,10 @@
 #include <system/window.h>
 #include <ui/GraphicTypes.h>
 
-#include "Display/DisplaySnapshot.h"
+/* QTI_BEGIN */
+#include <cutils/properties.h>
+/* QTI_END */
+
 #include "DisplayDevice.h"
 #include "FrontEnd/DisplayInfo.h"
 #include "Layer.h"
@@ -117,6 +120,12 @@ DisplayDevice::DisplayDevice(DisplayDeviceCreationArgs& args)
 
     // initialize the display orientation transform.
     setProjection(ui::ROTATION_0, Rect::INVALID_RECT, Rect::INVALID_RECT);
+
+    /* QTI_BEGIN */
+    char value[PROPERTY_VALUE_MAX];
+    property_get("vendor.display.enable_fb_scaling", value, "0");
+    mUseFbScaling = atoi(value);
+    /* QTI_END */
 }
 
 DisplayDevice::~DisplayDevice() = default;
@@ -160,14 +169,44 @@ auto DisplayDevice::getFrontEndInfo() const -> frontend::DisplayInfo {
                                                         inversePhysicalOrientation),
                                                 width, height);
     const auto& displayTransform = undoPhysicalOrientation * getTransform();
+
+    /* QTI_BEGIN */
+    ui::Transform scale;
+    ui::Transform rotationTransform = getTransform();
+    scale.set(1, 0, 0, 1);
+    if(mUseFbScaling && isPrimary()){ //use fb_scaling
+        auto currMode = refreshRateSelector().getActiveMode();
+        rotationTransform.set(getTransform().getOrientation(), currMode.modePtr->getWidth(),
+                              currMode.modePtr->getHeight());
+        const float scaleX = static_cast<float>(currMode.modePtr->getWidth()) / getWidth();
+        const float scaleY = static_cast<float>(currMode.modePtr->getHeight()) / getHeight();
+        scale.set(scaleX, 0, 0, scaleY);
+    }
+    const auto& displayTransform_s = undoPhysicalOrientation * rotationTransform * scale;
+    /* QTI_END */
+
     // Send the inverse display transform to input so it can convert display coordinates to
     // logical display.
-    info.transform = displayTransform.inverse();
 
     info.logicalWidth = getLayerStackSpaceRect().width();
     info.logicalHeight = getLayerStackSpaceRect().height();
 
-    return {.info = info,
+    /* QTI_BEGIN */
+    if (mUseFbScaling && isPrimary()) {
+        info.transform = displayTransform_s.inverse();
+        return {.info = info,
+                .transform = displayTransform_s,
+                .receivesInput = receivesInput(),
+                .isSecure = isSecure(),
+                .isPrimary = isPrimary(),
+                .isVirtual = isVirtual(),
+                .rotationFlags = ui::Transform::toRotationFlags(mOrientation),
+                .transformHint = getTransformHint()};
+    }
+    /* QTI_END */
+    else {
+        info.transform = displayTransform.inverse();
+        return {.info = info,
             .transform = displayTransform,
             .receivesInput = receivesInput(),
             .isSecure = isSecure(),
@@ -175,6 +214,7 @@ auto DisplayDevice::getFrontEndInfo() const -> frontend::DisplayInfo {
             .isVirtual = isVirtual(),
             .rotationFlags = ui::Transform::toRotationFlags(mOrientation),
             .transformHint = getTransformHint()};
+    }
 }
 
 void DisplayDevice::setPowerMode(hal::PowerMode mode) {
@@ -221,10 +261,7 @@ void DisplayDevice::setActiveMode(DisplayModeId modeId, Fps displayFps, Fps rend
     ATRACE_INT(mRenderFrameRateFPSTrace.c_str(), renderFps.getIntValue());
 
     mRefreshRateSelector->setActiveMode(modeId, renderFps);
-
-    if (mRefreshRateOverlay) {
-        mRefreshRateOverlay->changeRefreshRate(displayFps, renderFps);
-    }
+    updateRefreshRateOverlayRate(displayFps, renderFps);
 }
 
 status_t DisplayDevice::initiateModeChange(const ActiveModeInfo& info,
@@ -238,10 +275,18 @@ status_t DisplayDevice::initiateModeChange(const ActiveModeInfo& info,
         return BAD_VALUE;
     }
     mUpcomingActiveMode = info;
-    ATRACE_INT(mActiveModeFPSHwcTrace.c_str(), info.modeOpt->modePtr->getFps().getIntValue());
-    return mHwComposer.setActiveModeWithConstraints(getPhysicalId(),
-                                                    info.modeOpt->modePtr->getHwcId(), constraints,
-                                                    outTimeline);
+    mIsModeSetPending = true;
+
+    const auto& pendingMode = *info.modeOpt->modePtr;
+    ATRACE_INT(mActiveModeFPSHwcTrace.c_str(), pendingMode.getFps().getIntValue());
+
+    return mHwComposer.setActiveModeWithConstraints(getPhysicalId(), pendingMode.getHwcId(),
+                                                    constraints, outTimeline);
+}
+
+void DisplayDevice::finalizeModeChange(DisplayModeId modeId, Fps displayFps, Fps renderFps) {
+    setActiveMode(modeId, displayFps, renderFps);
+    mIsModeSetPending = false;
 }
 
 nsecs_t DisplayDevice::getVsyncPeriodFromHWC() const {
@@ -446,7 +491,7 @@ void DisplayDevice::enableRefreshRateOverlay(bool enable, bool setByHwc, bool sh
     mRefreshRateOverlay = std::make_unique<RefreshRateOverlay>(fpsRange, features);
     mRefreshRateOverlay->setLayerStack(getLayerStack());
     mRefreshRateOverlay->setViewport(getSize());
-    updateRefreshRateOverlayRate(getActiveMode().modePtr->getFps(), getActiveMode().fps);
+    updateRefreshRateOverlayRate(getActiveMode().modePtr->getFps(), getActiveMode().fps, setByHwc);
 }
 
 void DisplayDevice::updateRefreshRateOverlayRate(Fps displayFps, Fps renderFps, bool setByHwc) {

@@ -39,6 +39,7 @@ public:
     composer::DisplayExtnIntf* qtiGetDisplayExtn() { return nullptr; }
     bool qtiLatchMediaContent(sp<Layer> layer) override;
     void qtiUpdateBufferData(bool qtiLatchMediaContent, const layer_state_t& s) override;
+    void qtiOnComposerHalRefresh() override;
 
     /*
      * Methods that call the FeatureManager APIs.
@@ -65,7 +66,7 @@ public:
     /*
      * Methods that call FrameScheduler APIs.
      */
-    void qtiUpdateFrameScheduler() override;
+    //void qtiUpdateFrameScheduler() override;
 
     /*
      * Methods that call the IDisplayConfig APIs.
@@ -101,7 +102,7 @@ public:
     void qtiDestroySmomoInstance(const sp<DisplayDevice>& display) override;
     void qtiSetRefreshRates(PhysicalDisplayId displayId) override;
     void qtiSetRefreshRateTo(int32_t refreshRate) override;
-    void qtiSyncToDisplayHardware() override;
+    //void qtiSyncToDisplayHardware() override;
     void qtiUpdateSmomoState() override;
     void qtiSetDisplayAnimating() override;
     void qtiUpdateSmomoLayerInfo(sp<Layer> layer, int64_t desiredPresentTime, bool isAutoTimestamp,
@@ -118,6 +119,7 @@ public:
     uint32_t qtiGetLayerClass(std::string mName) override;
     void qtiSetVisibleLayerInfo(DisplayId displayId,
                                     const char* name, int32_t sequence) override;
+    bool qtiIsSmomoOptimalRefreshActive() override;
 
     /*
      * Methods for speculative fence
