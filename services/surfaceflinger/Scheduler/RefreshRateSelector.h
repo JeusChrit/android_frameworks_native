@@ -194,10 +194,13 @@ public:
         // Whether the display is about to be powered on, or has been in PowerMode::ON
         // within the timeout of DisplayPowerTimer.
         bool powerOnImminent = false;
+        // Whether the expiry for high refresh rate on heuristic layers has been reached.
+        bool heuristicIdle = false;
 
         bool operator==(GlobalSignals other) const {
             return touch == other.touch && idle == other.idle &&
-                    powerOnImminent == other.powerOnImminent;
+                    powerOnImminent == other.powerOnImminent &&
+                    heuristicIdle == other.heuristicIdle;
         }
 
         auto toString() const {
@@ -489,6 +492,7 @@ private:
 
     DisplayModeIterator mMinRefreshRateModeIt GUARDED_BY(mLock);
     DisplayModeIterator mMaxRefreshRateModeIt GUARDED_BY(mLock);
+    DisplayModeIterator mIdleRefreshRateModeIt GUARDED_BY(mLock);
 
     // Display modes that satisfy the Policy's ranges, filtered and sorted by refresh rate.
     std::vector<FrameRateMode> mPrimaryFrameRates GUARDED_BY(mLock);

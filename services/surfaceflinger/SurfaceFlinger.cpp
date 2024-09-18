@@ -512,14 +512,14 @@ SurfaceFlinger::SurfaceFlinger(Factory& factory) : SurfaceFlinger(factory, SkipI
 }
 
 LatchUnsignaledConfig SurfaceFlinger::getLatchUnsignaledConfig() {
-    if (base::GetBoolProperty("debug.sf.auto_latch_unsignaled"s, true)) {
-        return LatchUnsignaledConfig::AutoSingleLayer;
-    }
-
     if (base::GetBoolProperty("debug.sf.latch_unsignaled"s, false)) {
         return LatchUnsignaledConfig::Always;
     }
-
+    /* QTI_BEGIN */
+    if (base::GetBoolProperty("debug.sf.auto_latch_unsignaled"s, true)) {
+        return LatchUnsignaledConfig::AutoSingleLayer;
+    }
+    /* QTI_END */
     return LatchUnsignaledConfig::Disabled;
 }
 
@@ -4784,7 +4784,7 @@ status_t SurfaceFlinger::setTransactionState(
     const int originPid = ipc->getCallingPid();
     const int originUid = ipc->getCallingUid();
     uint32_t permissions = LayerStatePermissions::getTransactionPermissions(originPid, originUid);
-    for (auto composerState : states) {
+    for (auto& composerState : states) {
         composerState.state.sanitize(permissions);
     }
 
